@@ -127,7 +127,7 @@ export default function Home() {
   return (
     <div className="flex min-h-screen w-full flex-col bg-background">
       <main className="container mx-auto flex-1 space-y-8 p-4 md:p-8">
-        <Header />
+        <Header activityLogs={activityLogs} errorLogs={errorLogs} />
 
         <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <ConnectionStatusCard database="Oracle" />
