@@ -24,32 +24,11 @@ export type Log = {
   message: string;
 };
 
-export const errorLogs: Log[] = [
-  { id: '1', severity: 'High', timestamp: new Date(Date.now() - 3600000), message: 'Conflict on table `tbl_users` row 42: Primary key violation.' },
-  { id: '2', severity: 'Medium', timestamp: new Date(Date.now() - 7200000), message: 'MySQL connection timed out during `tbl_orders` sync.' },
-  { id: '3', severity: 'Low', timestamp: new Date(Date.now() - 86400000), message: 'Skipped nullable column `last_login` in `tbl_users`.' },
-  { id: '4', severity: 'High', timestamp: new Date(Date.now() - 172800000), message: 'Data type mismatch in `tbl_products`. Expected INT, got VARCHAR.' },
-  { id: '5', severity: 'Medium', timestamp: new Date(Date.now() - 259200000), message: 'Character set conversion issue for `tbl_customers`.' },
-];
-
 export type Activity = {
   id: string;
   timestamp: Date;
   event: string;
 };
-
-export const activityLogs: Activity[] = [
-  { id: '10', timestamp: new Date(Date.now() - 120000), event: 'Sync completed for `tbl_inventory`.' },
-  { id: '9', timestamp: new Date(Date.now() - 300000), event: 'Sync started for `tbl_inventory`.' },
-  { id: '8', timestamp: new Date(Date.now() - 600000), event: 'Sync completed for `tbl_customers`.' },
-  { id: '7', timestamp: new Date(Date.now() - 900000), event: 'Sync started for `tbl_customers`.' },
-  { id: '6', timestamp: new Date(Date.now() - 1200000), event: 'User triggered manual sync for all tables.' },
-  { id: '5', timestamp: new Date(Date.now() - 1500000), event: 'Sync completed for `tbl_orders`.' },
-  { id: '4', timestamp: new Date(Date.now() - 1800000), event: 'Sync started for `tbl_orders`.' },
-  { id: '3', timestamp: new Date(Date.now() - 2100000), event: 'Sync completed for `tbl_products`.' },
-  { id: '2', timestamp: new Date(Date.now() - 2400000), event: 'Sync started for `tbl_products`.' },
-  { id: '1', timestamp: new Date(Date.now() - 2700000), event: 'Sync completed for `tbl_users`.' },
-];
 
 export const replicationStats = {
   lastSync: new Date(Date.now() - 120000),

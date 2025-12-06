@@ -1,24 +1,66 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Header } from "@/components/dashboard/header";
 import { ConnectionStatusCard } from "@/components/dashboard/connection-status-card";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { TableSelection, type ActivityLog as ActivityLogType, type ErrorLog as ErrorLogType } from "@/components/dashboard/table-selection";
 import { ErrorLog } from "@/components/dashboard/error-log";
 import { ActivityLog } from "@/components/dashboard/activity-log";
-import { replicationStats, errorLogs as initialErrorLogs, activityLogs as initialActivityLogs } from "@/library/data";
+import { replicationStats } from "@/library/data";
 import { Clock, CheckCircle, DatabaseZap } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { PendingRecordsStatCard } from '@/components/dashboard/pending-records-stat-card';
 
+const isBrowser = typeof window !== 'undefined';
+
 export default function Home() {
-    const [errorLogs, setErrorLogs] = useState<ErrorLogType[]>(initialErrorLogs);
-    const [activityLogs, setActivityLogs] = useState<ActivityLogType[]>(initialActivityLogs);
+    const [errorLogs, setErrorLogs] = useState<ErrorLogType[]>(() => {
+        if (!isBrowser) return [];
+        const saved = localStorage.getItem('errorLogs');
+        return saved ? JSON.parse(saved) : [];
+    });
+
+    const [activityLogs, setActivityLogs] = useState<ActivityLogType[]>(() => {
+        if (!isBrowser) return [];
+        const saved = localStorage.getItem('activityLogs');
+        return saved ? JSON.parse(saved) : [];
+    });
+    
+    const [lastSync, setLastSync] = useState<Date>(() => {
+         if (!isBrowser) return replicationStats.lastSync;
+         const saved = localStorage.getItem('lastSync');
+         return saved ? new Date(JSON.parse(saved)) : replicationStats.lastSync;
+    });
+
     const [refreshPending, setRefreshPending] = useState(0);
 
+    useEffect(() => {
+        if(isBrowser) {
+            localStorage.setItem('errorLogs', JSON.stringify(errorLogs));
+        }
+    }, [errorLogs]);
+
+    useEffect(() => {
+        if(isBrowser) {
+            localStorage.setItem('activityLogs', JSON.stringify(activityLogs));
+        }
+    }, [activityLogs]);
+
+    useEffect(() => {
+        if(isBrowser) {
+            localStorage.setItem('lastSync', JSON.stringify(lastSync));
+        }
+    }, [lastSync]);
+
+
     const handleNewLogs = (newActivities: ActivityLogType[], newErrors: ErrorLogType[]) => {
-        setActivityLogs(prev => [...newActivities, ...prev]);
-        setErrorLogs(prev => [...newErrors, ...prev]);
+        setActivityLogs(prev => [...newActivities, ...prev].slice(0, 20)); 
+        setErrorLogs(prev => [...newErrors, ...prev].slice(0, 20));
+
+        if (newErrors.length === 0 && newActivities.some(a => a.event.includes('completed'))) {
+            setLastSync(new Date());
+        }
+        
         setRefreshPending(count => count + 1);
     }
 
@@ -32,7 +74,7 @@ export default function Home() {
           <ConnectionStatusCard database="MySQL" />
           <StatCard
             title="Last Successful Sync"
-            value={formatDistanceToNow(replicationStats.lastSync, {
+            value={formatDistanceToNow(lastSync, {
               addSuffix: true,
             })}
             icon={<Clock className="h-6 w-6 text-muted-foreground" />}

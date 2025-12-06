@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
 import oracledb from 'oracledb';
@@ -33,19 +32,27 @@ export async function GET() {
     oracleCon = await getOracleConnection();
     mysqlCon = await getMySQLConnection();
 
-    // Get pending from Oracle
-    const oracleQuery = `SELECT COUNT(*) as PENDING_COUNT FROM bitacora WHERE replicado = 0`;
-    const oracleResult = await oracleCon.execute<{ PENDING_COUNT: number }>(oracleQuery);
-    const oraclePending = oracleResult.rows?.[0]?.PENDING_COUNT ?? 0;
+    // Oracle pending records
+    const oracleQuery = `SELECT COUNT(*) FROM bitacora WHERE replicado = 0`;
+    const oracleResult = await oracleCon.execute(oracleQuery);
 
-    // Get pending from MySQL
+    const oracleRow = oracleResult.rows?.[0] ?? {};
+    const oraclePending = Number(Object.values(oracleRow)[0] ?? 0);
+
+
+    // MySQL pending records
     const mysqlQuery = `SELECT COUNT(*) as pending_count FROM bitacora WHERE replicado = 0 OR replicado = FALSE`;
     const [mysqlRows] = await mysqlCon.execute(mysqlQuery);
     const mysqlPending = (mysqlRows as any[])[0]?.pending_count ?? 0;
-    
-    const totalPending = Number(oraclePending) + Number(mysqlPending);
 
-    return NextResponse.json({ pendingRecords: totalPending });
+    const totalPending = oraclePending + mysqlPending;
+
+    return NextResponse.json({ 
+      oraclePending,
+      mysqlPending,
+      pendingRecords: totalPending 
+    });
+
   } catch (error: any) {
     console.error('Error fetching pending records:', error);
     return NextResponse.json({ message: error.message ?? String(error), error: 'Failed to fetch pending records' }, { status: 500 });
