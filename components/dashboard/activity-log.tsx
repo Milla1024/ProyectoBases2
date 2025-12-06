@@ -8,10 +8,15 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from 'date-fns';
 import { CheckCircle2, Loader2, UserCog } from "lucide-react";
-import type { Activity } from "@/library/data";
+
+export type ActivityLog = {
+    id: string;
+    timestamp: Date;
+    event: string;
+};
 
 type ActivityLogProps = {
-    logs: Activity[];
+    logs: ActivityLog[];
 }
 
 export function ActivityLog({ logs }: ActivityLogProps) {
@@ -32,6 +37,11 @@ export function ActivityLog({ logs }: ActivityLogProps) {
       <CardContent>
         <ScrollArea className="h-96">
           <div className="space-y-4">
+            {logs.length === 0 && (
+                <div className="flex justify-center items-center h-full text-muted-foreground">
+                    <p>No activity to display yet.</p>
+                </div>
+            )}
             {logs.map((activity) => (
               <div key={activity.id} className="flex items-start space-x-4">
                 <div className="mt-1">{getEventIcon(activity.event)}</div>
@@ -40,7 +50,7 @@ export function ActivityLog({ logs }: ActivityLogProps) {
                     {activity.event}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {formatDistanceToNow(activity.timestamp, { addSuffix: true })}
+                    {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
                   </p>
                 </div>
               </div>

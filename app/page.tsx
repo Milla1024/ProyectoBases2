@@ -13,26 +13,73 @@ import { PendingRecordsStatCard } from '@/components/dashboard/pending-records-s
 
 const isBrowser = typeof window !== 'undefined';
 
+function getTodayString() {
+    return new Date().toDateString();
+}
+
 export default function Home() {
     const [errorLogs, setErrorLogs] = useState<ErrorLogType[]>(() => {
         if (!isBrowser) return [];
-        const saved = localStorage.getItem('errorLogs');
-        return saved ? JSON.parse(saved) : [];
+        try {
+            const saved = localStorage.getItem('errorLogs');
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            console.error("Failed to parse errorLogs from localStorage", e);
+            return [];
+        }
     });
 
     const [activityLogs, setActivityLogs] = useState<ActivityLogType[]>(() => {
         if (!isBrowser) return [];
-        const saved = localStorage.getItem('activityLogs');
-        return saved ? JSON.parse(saved) : [];
+        try {
+            const saved = localStorage.getItem('activityLogs');
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            console.error("Failed to parse activityLogs from localStorage", e);
+            return [];
+        }
     });
     
     const [lastSync, setLastSync] = useState<Date>(() => {
          if (!isBrowser) return replicationStats.lastSync;
-         const saved = localStorage.getItem('lastSync');
-         return saved ? new Date(JSON.parse(saved)) : replicationStats.lastSync;
+         try {
+             const saved = localStorage.getItem('lastSync');
+             return saved ? new Date(JSON.parse(saved)) : replicationStats.lastSync;
+         } catch (e) {
+            console.error("Failed to parse lastSync from localStorage", e);
+            return replicationStats.lastSync;
+         }
+    });
+
+    const [replicationsToday, setReplicationsToday] = useState<number>(() => {
+        if (!isBrowser) return 0;
+        try {
+            const savedCount = localStorage.getItem('replicationsToday');
+            const savedDate = localStorage.getItem('replicationsDate');
+            const today = getTodayString();
+
+            if (savedDate === today && savedCount) {
+                return JSON.parse(savedCount);
+            }
+        } catch (e) {
+            console.error("Failed to parse replicationsToday from localStorage", e);
+        }
+        return 0;
     });
 
     const [refreshPending, setRefreshPending] = useState(0);
+
+    useEffect(() => {
+        if (!isBrowser) return;
+        const today = getTodayString();
+        const savedDate = localStorage.getItem('replicationsDate');
+
+        if (savedDate !== today) {
+            setReplicationsToday(0);
+            localStorage.setItem('replicationsToday', JSON.stringify(0));
+            localStorage.setItem('replicationsDate', today);
+        }
+    }, []);
 
     useEffect(() => {
         if(isBrowser) {
@@ -52,13 +99,26 @@ export default function Home() {
         }
     }, [lastSync]);
 
+    useEffect(() => {
+        if (isBrowser) {
+            localStorage.setItem('replicationsToday', JSON.stringify(replicationsToday));
+            localStorage.setItem('replicationsDate', getTodayString());
+        }
+    }, [replicationsToday]);
+
 
     const handleNewLogs = (newActivities: ActivityLogType[], newErrors: ErrorLogType[]) => {
-        setActivityLogs(prev => [...newActivities, ...prev].slice(0, 20)); 
-        setErrorLogs(prev => [...newErrors, ...prev].slice(0, 20));
+        // Ensure timestamps are preserved correctly
+        const processedActivities = newActivities.map(a => ({...a, timestamp: new Date(a.timestamp)}));
+        const processedErrors = newErrors.map(e => ({...e, timestamp: new Date(e.timestamp)}));
+
+        setActivityLogs(prev => [...processedActivities, ...prev].slice(0, 20)); 
+        setErrorLogs(prev => [...processedErrors, ...prev].slice(0, 20));
 
         if (newErrors.length === 0 && newActivities.some(a => a.event.includes('completed'))) {
-            setLastSync(new Date());
+            const now = new Date();
+            setLastSync(now);
+            setReplicationsToday(prev => prev + 1);
         }
         
         setRefreshPending(count => count + 1);
@@ -74,7 +134,7 @@ export default function Home() {
           <ConnectionStatusCard database="MySQL" />
           <StatCard
             title="Last Successful Sync"
-            value={formatDistanceToNow(lastSync, {
+            value={formatDistanceToNow(new Date(lastSync), { // Ensure date is valid for formatting
               addSuffix: true,
             })}
             icon={<Clock className="h-6 w-6 text-muted-foreground" />}
@@ -96,9 +156,9 @@ export default function Home() {
              <PendingRecordsStatCard refreshKey={refreshPending} />
             <StatCard
               title="Replications Today"
-              value="1,234"
+              value={replicationsToday}
               icon={<DatabaseZap className="h-6 w-6 text-muted-foreground" />}
-              description="+20.1% from last day"
+              description="Sync operations performed today"
             />
           </div>
         </section>
