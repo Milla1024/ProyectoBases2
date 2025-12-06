@@ -62,7 +62,7 @@ export function TableSelection({ onReplicationComplete }: TableSelectionProps) {
       newActivities.push({ id: crypto.randomUUID(), timestamp: new Date(), event: `Sync started for ${selectedTable}` });
       
       // Step 1: MySQL to Oracle
-      const response1 = await fetch("/api/replicate", {
+      const response1 = await fetch("/api/replicar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -85,7 +85,7 @@ export function TableSelection({ onReplicationComplete }: TableSelectionProps) {
 
 
       // Step 2: Oracle to MySQL
-      const response2 = await fetch("/api/replicate", {
+      const response2 = await fetch("/api/replicar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

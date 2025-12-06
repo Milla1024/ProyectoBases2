@@ -19,7 +19,6 @@ export default function Home() {
     const handleNewLogs = (newActivities: ActivityLogType[], newErrors: ErrorLogType[]) => {
         setActivityLogs(prev => [...newActivities, ...prev]);
         setErrorLogs(prev => [...newErrors, ...prev]);
-        // Trigger a refresh of the pending records card
         setRefreshPending(count => count + 1);
     }
 
